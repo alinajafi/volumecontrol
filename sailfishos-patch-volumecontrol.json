@@ -1,0 +1,12 @@
+{
+    "translation_catalog": "sailfishos-patch-volumecontrol",
+    "entries": [
+    {
+        "path": "system_settings/look_and_feel/sounds",
+        "type": "custom",
+        "params": {
+            "source": "/usr/share/jolla-settings/pages/sounds/SoundsPage.qml"
+        }
+    }
+    ]
+}
