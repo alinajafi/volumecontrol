@@ -1,0 +1,8 @@
+{
+    "name": "Volume control settings",
+    "description": "Adds settings for advanced volume control to Sounds and feedback",
+    "category": "homescreen",
+    "infos": {
+        "maintainer": "AliNa"
+    }
+}
