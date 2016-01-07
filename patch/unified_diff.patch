@@ -1,0 +1,272 @@
+diff -Nru jolla/usr/lib/qt5/qml/com/jolla/gallery/ambience/VolumeAction.qml alina/usr/lib/qt5/qml/com/jolla/gallery/ambience/VolumeAction.qml
+--- jolla/usr/lib/qt5/qml/com/jolla/gallery/ambience/VolumeAction.qml	2016-01-07 04:49:24.118573029 +0330
++++ alina/usr/lib/qt5/qml/com/jolla/gallery/ambience/VolumeAction.qml	2016-01-07 04:51:12.162576234 +0330
+@@ -1,5 +1,6 @@
+ import QtQuick 2.0
+ import Sailfish.Silica 1.0
++import org.nemomobile.configuration 1.0
+ 
+ AmbienceAction {
+     id: action
+@@ -44,9 +45,16 @@
+             width: editor.width
+             height: implicitHeight + valueLabel.height
+ 
++            ConfigurationGroup {
++                id: volumecontrol
++                path: "/apps/lipstick-jolla-home-qt5/volumecontrol"
++
++                property int volumeStep: 20
++            }
++
+             minimumValue: 0
+             maximumValue: 100
+-            stepSize: 20
++            stepSize: volumecontrol.volumeStep
+ 
+             onValueChanged: ambience[action.property] = Math.round(value)
+ 
+diff -Nru jolla/usr/share/jolla-settings/pages/sounds/SoundsPage.qml alina/usr/share/jolla-settings/pages/sounds/SoundsPage.qml
+--- jolla/usr/share/jolla-settings/pages/sounds/SoundsPage.qml	2015-12-02 15:01:48.674344737 +0330
++++ alina/usr/share/jolla-settings/pages/sounds/SoundsPage.qml	2016-01-07 04:51:53.398577458 +0330
+@@ -3,6 +3,7 @@
+ import com.jolla.settings 1.0
+ import com.jolla.settings.system 1.0
+ import org.nemomobile.systemsettings 1.0
++import org.nemomobile.configuration 1.0
+ import QtFeedback 5.0
+ 
+ Page {
+@@ -150,7 +151,86 @@
+                 description: qsTrId("settings_sounds-la-touch_screen_feedback_description")
+                 onClicked: soundSettings.touchscreenVibrationLevel = !soundSettings.touchscreenVibrationLevel
+             }
++
++            SectionHeader {
++                //% Advanced settings
++                text: qsTrId("sailfishos-patch-volumecontrol-la-advanced_settings")
++            }
++
++            ComboBox {
++                width: parent.width
++
++                //% Ringtone volume step
++                label: qsTrId("sailfishos-patch-volumecontrol-la-volume_step")
++                currentIndex: updateIndex(volumecontrol.volumeStep)
++
++                menu: ContextMenu {
++                    MenuItem {
++                        text: "10%"
++                        onClicked: {
++                            volumecontrol.volumeStep = 10
++                            volumecontrol.step = 0.1
++                        }
++                    }
++                    MenuItem {
++                        text: "20%"
++                        onClicked: {
++                            volumecontrol.volumeStep = 20
++                            volumecontrol.step = 0.2
++                        }
++                    }
++                }
++
++                function updateIndex(value) {
++                    if (value == 10) {
++                        return 0
++                    } else if (value == 20) {
++                        return 1
++                    }
++                }
++            }
++
++            TextSwitch {
++                width: parent.width
++                //% Volume buttons for ringtone
++                text: qsTrId("sailfishos-patch-volumecontrol-la-buttons_for_ringtone")
++                //% Volume buttons will change ringtone volume when no media playback is present
++                description: qsTrId("sailfishos-patch-volumecontrol-la-buttons_for_ringtone_description")
++                checked: volumecontrol.volumeButtons
++                onClicked: volumecontrol.volumeButtons = checked
++            }
++
++            TextSwitch {
++                width: parent.width
++                //% Ringtone volume indicator
++                text: qsTrId("sailfishos-patch-volumecontrol-la-volume_indicator")
++                //% Adds an indicator to status bar to display ringtone volume level
++                description: qsTrId("sailfishos-patch-volumecontrol-la-volume_indicator_description")
++                checked: volumecontrol.volumeIndicator
++                onClicked: volumecontrol.volumeIndicator = checked
++            }
++
++            TextSwitch {
++                width: parent.width
++                //% Three-finger gesture
++                text: qsTrId("sailfishos-patch-volumecontrol-la-threefinger")
++                //% Enables three-finger gesture for media volume
++                description: qsTrId("sailfishos-patch-volumecontrol-la-threefinger_description")
++                checked: volumecontrol.threeFinger
++                onClicked: volumecontrol.threeFinger = checked
++            }
+         }
+         VerticalScrollDecorator {}
+     }
++
++    ConfigurationGroup {
++        id: volumecontrol
++        path: "/apps/lipstick-jolla-home-qt5/volumecontrol"
++
++        property int volumeStep: 20
++        property real step: 0.2
++        property bool volumeButtons: true
++        property bool volumeIndicator: false
++        property bool threeFinger: true
++        }
+ }
+diff -Nru jolla/usr/share/jolla-settings/pages/sounds/VolumeSlider.qml alina/usr/share/jolla-settings/pages/sounds/VolumeSlider.qml
+--- jolla/usr/share/jolla-settings/pages/sounds/VolumeSlider.qml	2016-01-07 04:47:17.026569259 +0330
++++ alina/usr/share/jolla-settings/pages/sounds/VolumeSlider.qml	2016-01-07 04:51:53.526577461 +0330
+@@ -2,18 +2,26 @@
+ import Sailfish.Silica 1.0
+ import com.jolla.settings.system 1.0
+ import org.nemomobile.systemsettings 1.0
++import org.nemomobile.configuration 1.0
+ 
+ Slider {
+     id: slider
+ 
+     property string entryPath
+ 
++    ConfigurationGroup {
++        id: volumecontrol
++        path: "/apps/lipstick-jolla-home-qt5/volumecontrol"
++
++        property int volumeStep: 20
++        }
++
+     height: implicitHeight + valueLabel.height
+     //% "Ringtone volume"
+     label: qsTrId("settings_sounds_la_volume")
+     maximumValue: 100
+     minimumValue: 0
+-    stepSize: 20
++    stepSize: volumecontrol.volumeStep
+     value: profileControl.ringerVolume
+ 
+     onValueChanged: {
+diff -Nru jolla/usr/share/lipstick-jolla-home-qt5/compositor.qml alina/usr/share/lipstick-jolla-home-qt5/compositor.qml
+--- jolla/usr/share/lipstick-jolla-home-qt5/compositor.qml	2016-01-07 04:43:26.002562405 +0330
++++ alina/usr/share/lipstick-jolla-home-qt5/compositor.qml	2016-01-07 04:58:30.018589224 +0330
+@@ -216,10 +216,17 @@
+         fileName: "/run/systemd/boot-status/init-done"
+     }
+ 
++    ConfigurationGroup {
++        id: volumecontrol
++        path: "/apps/lipstick-jolla-home-qt5/volumecontrol"
++
++        property bool threeFinger: true
++        }
++
+     MultiPointTouchDrag {
+         id: globalVolumeGestureItem
+ 
+-        enabled: !systemGesturesDisabled && SS.Screen.sizeCategory >= SS.Screen.Large
++        enabled: !systemGesturesDisabled && volumecontrol.threeFinger
+         orientation: Lipstick.compositor.topmostWindowOrientation
+         fingers: 3
+         direction: MultiPointTouchDrag.Vertical
+diff -Nru jolla/usr/share/lipstick-jolla-home-qt5/statusarea/ProfileStatusIndicator.qml alina/usr/share/lipstick-jolla-home-qt5/statusarea/ProfileStatusIndicator.qml
+--- jolla/usr/share/lipstick-jolla-home-qt5/statusarea/ProfileStatusIndicator.qml	2015-12-18 09:48:30.925302927 +0330
++++ alina/usr/share/lipstick-jolla-home-qt5/statusarea/ProfileStatusIndicator.qml	2016-01-07 04:53:04.042579553 +0330
+@@ -7,11 +7,31 @@
+ 
+ import QtQuick 2.0
+ import org.freedesktop.contextkit 1.0
++import org.nemomobile.systemsettings 1.0
++import org.nemomobile.configuration 1.0
+ 
+ Image {
+     id: profileStatusIndicator
++
++    ProfileControl {
++        id: profileControl
++    }
++
++    ConfigurationGroup {
++        id: volumecontrol
++        path: "/apps/lipstick-jolla-home-qt5/volumecontrol"
++
++        property bool volumeIndicator: false
++    }
++
+     property bool enabled: true
+-    source: profileNameContextProperty.value == "silent" ? "image://theme/icon-status-silent" + iconSuffix : ""
++    source: profileNameContextProperty.value == "silent" ? "image://theme/icon-status-silent" + iconSuffix : 
++            (volumecontrol.volumeIndicator ? 
++            (profileControl.ringerVolume == 100 ? "image://theme/icon-status-volume-100" + iconSuffix :
++            (profileControl.ringerVolume > 75  ? "image://theme/icon-status-volume-80" + iconSuffix :
++            (profileControl.ringerVolume > 50 ? "image://theme/icon-status-volume-60" + iconSuffix :
++            (profileControl.ringerVolume > 30 ? "image://theme/icon-status-volume-40" + iconSuffix :
++                                                "image://theme/icon-status-volume-20" + iconSuffix)))) : "") 
+     width: source != "" ? implicitWidth : 0
+     height: source != "" ? implicitHeight : 0
+ 
+diff -Nru jolla/usr/share/lipstick-jolla-home-qt5/volumecontrol/VolumeControl.qml alina/usr/share/lipstick-jolla-home-qt5/volumecontrol/VolumeControl.qml
+--- jolla/usr/share/lipstick-jolla-home-qt5/volumecontrol/VolumeControl.qml	2015-12-02 17:56:59.113783143 +0330
++++ alina/usr/share/lipstick-jolla-home-qt5/volumecontrol/VolumeControl.qml	2015-12-03 03:43:17.718902150 +0330
+@@ -9,17 +9,28 @@
+ import org.nemomobile.lipstick 0.1
+ import Sailfish.Silica 1.0
+ import org.nemomobile.systemsettings 1.0
++import org.nemomobile.configuration 1.0
+ import QtFeedback 5.0
+ import "../systemwindow"
+ 
+ SystemWindow {
+     id: volumeBar
+ 
++    ConfigurationGroup {
++        id: volumecontrol
++        path: "/apps/lipstick-jolla-home-qt5/volumecontrol"
++
++        property int volumeStep: 20
++        property real step: 0.2
++        property bool threeFinger: true
++        property bool volumeButtons: true
++        }
++
+     property bool volumeIncreasing
+     property bool controllingMedia: volumeControl.mediaState === VolumeControl.MediaStateActive ||
+                                     volumeControl.mediaState === VolumeControl.MediaStateForeground ||
+                                     volumeControl.mediaState === VolumeControl.MediaStateBackground ||
+-                                    volumeControl.callActive || showContinuousVolume
++                                    volumeControl.callActive || showContinuousVolume || !volumecontrol.volumeButtons
+     property real statusBarPushDownY: volumeArea.y + volumeArea.height
+     property bool showContinuousVolume: false
+     property int maximumVolume: controllingMedia ? volumeControl.maximumVolume : 100
+@@ -242,7 +253,7 @@
+             extend: "showBar"
+             PropertyChanges {
+                 target: volumeBar
+-                showContinuousVolume: Screen.sizeCategory >= Screen.Large
++                showContinuousVolume: volumecontrol.threeFinger
+             }
+         }
+     ]
+@@ -419,11 +430,11 @@
+                 volumeControl.volume = volumeControl.volume + (volumeBar.volumeIncreasing ? 1 : -1)
+             } else {
+                 if (volumeIncreasing)
+-                    initialChange = profile.ringerVolume === 100 ? 0 : -0.2
++                    initialChange = profile.ringerVolume === 100 ? 0 : -volumecontrol.step
+                 else
+-                    initialChange = profile.ringerVolume === 0 ? 0 : 0.2
++                    initialChange = profile.ringerVolume === 0 ? 0 : volumecontrol.step
+ 
+-                adjustRingtoneVolume(volumeBar.volumeIncreasing ? 20 : -20)
++                adjustRingtoneVolume(volumeBar.volumeIncreasing ? volumecontrol.volumeStep : -volumecontrol.volumeStep)
+                 keyRepeat.restart() // no initial delay
+             }
+ 
